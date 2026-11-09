@@ -1,30 +1,113 @@
-import React from "react";
+import React, { useReducer, useState } from "react";
 
-import Product from "./products";
-import Add from "./addtocart";
-import { BrowserRouter, Route, Routes } from "react-router-dom";
-import Tap from "./display";
+const initialState = [];
 
-function App(){
+function reducer(state, action) {
+  switch (action.type) {
 
-  return (
-    <>
-    <BrowserRouter>
-       <h1>HELLO</h1>
-      <Add>
-      <Routes>
-      <Route path="/" element={<Product/>}></Route>
-      <Route path="/cart" element={<Tap/>}></Route>
-      </Routes>
-     </Add>
-    </BrowserRouter>
-   
-     
-    
-    </>
-  )
+    case "ADD":
+      return [
+        ...state,
+        {
+          id: Date.now(),
+          text: action.payload
+        }
+      ];
 
+    case "EDIT":
+      return state.map((todo) =>
+        todo.id === action.payload.id
+          ? { ...todo, text: action.payload.text }
+          : todo
+      );
 
+    case "DELETE":
+      return state.filter(
+        (todo) => todo.id !== action.payload
+      );
+
+    default:
+      return state;
+  }
 }
 
-export default App
+function App() {
+
+  const [todos, dispatch] = useReducer(reducer, initialState);
+
+  const [input, setInput] = useState("");
+  const [editId, setEditId] = useState(null);
+
+  function handleSubmit() {
+    if (input.trim() === "") return;
+
+    if (editId !== null) {
+      dispatch({
+        type: "EDIT",
+        payload: {
+          id: editId,
+          text: input
+        }
+      });
+
+      setEditId(null);
+
+    } else {
+      dispatch({
+        type: "ADD",
+        payload: input
+      });
+    }
+
+    setInput("");
+  }
+
+  function handleEdit(todo) {
+    setInput(todo.text);
+    setEditId(todo.id);
+  }
+
+  function handleDelete(id) {
+    dispatch({
+      type: "DELETE",
+      payload: id
+    });
+  }
+
+  return (
+    <div style={{ padding: "30px" }}>
+
+      <h1>Todo App</h1>
+
+      <input
+        type="text"
+        placeholder="Enter your task"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+      />
+
+      <button onClick={handleSubmit}>
+        {editId !== null ? "Update" : "Add"}
+      </button>
+
+      {todos.map((todo) => (
+        <div key={todo.id}>
+
+          <span>{todo.text}</span>
+
+          <button onClick={() => handleEdit(todo)}>
+            Edit
+          </button>
+
+          <button onClick={() => handleDelete(todo.id)}>
+            Delete
+          </button>
+
+        </div>
+      ))}
+
+    </div>
+  );
+}
+
+export default App;
